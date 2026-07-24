@@ -5,28 +5,41 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
-export default function AdminPage() {
+const gamesList = [
+  'PUBG Mobile',
+  'Fortnite',
+  'Counter-Strike 2 (CS2)',
+  'Call of Duty',
+  'Clash of Clans',
+  'League of Legends',
+  'Roblox',
+  'Free Fire'
+];
+
+export default function AdminDashboard() {
   const router = useRouter();
+  const ADMIN_PASSWORD = 'Syr717&s1y@ro62'; 
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passcode, setPasscode] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
   const [listings, setListings] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatGame, setSelectedStatGame] = useState('الكل');
+  const [searchId, setSearchId] = useState('');
+  const [searchResult, setSearchResult] = useState<any | null>(null);
+  const [searchNotFound, setSearchNotFound] = useState(false);
+
+  const [editingItem, setEditingItem] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // كلمة المرور الخاصة بلوحة التحكم (يمكنك تغييرها هنا)
-  const ADMIN_SECRET = 'Syr717&s1y@ro62'; 
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passcode === ADMIN_SECRET) {
-      setIsAuthenticated(true);
-      fetchListings();
-    } else {
-      alert('كلمة المرور غير صحيحة!');
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadListings();
     }
-  };
+  }, [isAuthenticated]);
 
-  const fetchListings = async () => {
+  const loadListings = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('listings')
@@ -34,68 +47,153 @@ export default function AdminPage() {
       .order('id', { ascending: false });
 
     if (error) {
-      console.error('خطأ في جلب البيانات:', error);
+      console.error('خطأ في جلب البيانات من Supabase:', error);
     } else {
       setListings(data || []);
     }
     setLoading(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm(`هل أنت متأكد من حذف الحساب برقم الطلب #${id}؟`)) return;
-
-    const { error } = await supabase
-      .from('listings')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert('حدث خطأ أثناء الحذف: ' + error.message);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setErrorMsg('');
     } else {
-      // إزالة الحساب من القائمة المحلية فوراً لتحديث الواجهة بدون الحاجة لإعادة تحميل الصفحة
-      setListings((prev) => prev.filter((item) => item.id !== id));
-      // إخبار التوجيه بتحديث البيانات من السيرفر
-      router.refresh();
-      alert('تم حذف الحساب بنجاح!');
+      setErrorMsg('كلمة المرور غير صحيحة!');
     }
   };
 
-  // تصفية الحسابات بناءً على البحث برقم الـ ID أو العنوان
-  const filteredListings = listings.filter((item) => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return true;
-    return (
-      item.id.toString().toLowerCase().includes(query) ||
-      item.title?.toLowerCase().includes(query) ||
-      item.game?.toLowerCase().includes(query)
-    );
-  });
+  const filteredForStats = selectedStatGame === 'الكل' 
+    ? listings 
+    : listings.filter(item => item.game === selectedStatGame);
+
+  const totalCount = filteredForStats.length;
+  const totalPrice = filteredForStats.reduce((sum, item) => sum + Number(item.price || 0), 0);
+
+  const handleDeleteGameListings = async (gameName: string) => {
+    if (gameName === 'الكل') {
+      if (confirm('تحذير شديد: هل أنت متأكد من حذف جميع حسابات المنصة بالكامل من قاعدة البيانات؟')) {
+        const { error } = await supabase.from('listings').delete().neq('id', 0); // حذف الكل
+        if (error) {
+          alert('حدث خطأ أثناء الحذف: ' + error.message);
+        } else {
+          setListings([]);
+          setSearchResult(null);
+          router.refresh();
+          alert('تم تفريغ المنصة بالكامل بنجاح.');
+        }
+      }
+    } else {
+      if (confirm(`هل أنت متأكد من حذف جميع حسابات لعبة (${gameName}) نهائياً من قاعدة البيانات؟`)) {
+        const { error } = await supabase.from('listings').delete().eq('game', gameName);
+        if (error) {
+          alert('حدث خطأ أثناء الحذف: ' + error.message);
+        } else {
+          loadListings();
+          setSearchResult(null);
+          router.refresh();
+          alert(`تم حذف جميع حسابات ${gameName} بنجاح.`);
+        }
+      }
+    }
+  };
+
+  const handleSearchAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchNotFound(false);
+    setSearchResult(null);
+
+    if (!searchId.trim()) return;
+
+    const cleanId = searchId.replace('#', '').trim();
+    const found = listings.find(item => String(item.id) === cleanId);
+
+    if (found) {
+      setSearchResult(found);
+    } else {
+      setSearchNotFound(true);
+    }
+  };
+
+  const handleDelete = async (id: any) => {
+    if (confirm('هل أنت متأكد من حذف هذا الحساب نهائياً من المنصة؟')) {
+      const { error } = await supabase.from('listings').delete().eq('id', id);
+
+      if (error) {
+        alert('حدث خطأ أثناء الحذف: ' + error.message);
+      } else {
+        // تحديث القائمة المحلية وتحديث الواجهة فوراً
+        setListings(prev => prev.filter(item => item.id !== id));
+        if (searchResult && searchResult.id === id) {
+          setSearchResult(null);
+        }
+        router.refresh();
+        alert('تم حذف الحساب بنجاح من المنصة!');
+      }
+    }
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    const { error } = await supabase
+      .from('listings')
+      .update({
+        title: editingItem.title,
+        price: editingItem.price,
+        level: editingItem.level,
+        rank: editingItem.rank,
+        contactLink: editingItem.contactLink || editingItem.contact
+      })
+      .eq('id', editingItem.id);
+
+    if (error) {
+      alert('حدث خطأ أثناء التعديل: ' + error.message);
+    } else {
+      loadListings();
+      if (searchResult && searchResult.id === editingItem.id) {
+        setSearchResult(editingItem);
+      }
+      setEditingItem(null);
+      router.refresh();
+      alert('تم تعديل الحساب بنجاح في قاعدة البيانات!');
+    }
+  };
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0b0f19] text-white flex items-center justify-center p-4">
-        <div className="bg-[#131b2e] border border-gray-800 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center">
-          <h1 className="text-2xl font-black mb-2 text-cyan-400">لوحة تحكم المشرف</h1>
-          <p className="text-xs text-gray-400 mb-6">الرجاء إدخال رمز المرور السري للوصول</p>
+        <div className="bg-[#131b2e] border border-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl">
+          <h1 className="text-2xl font-black text-center mb-2 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            لوحة تحكم المشرفين
+          </h1>
+          <p className="text-gray-400 text-xs text-center mb-6">الرجاء إدخال كلمة المرور السرية للوصول</p>
           
           <form onSubmit={handleLogin} className="space-y-4">
-            <input 
-              type="password" 
-              placeholder="كلمة المرور..."
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl p-3 text-center text-sm text-white focus:outline-none focus:border-cyan-500"
-            />
+            <div>
+              <input 
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="كلمة المرور السرية..."
+                className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 text-center tracking-widest"
+              />
+            </div>
+            {errorMsg && (
+              <p className="text-red-500 text-xs text-center font-bold">{errorMsg}</p>
+            )}
             <button 
               type="submit"
-              className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold py-3 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/20 text-sm cursor-pointer"
             >
-              دخول لوحة التحكم
+              دخول اللوحة
             </button>
           </form>
-          <div className="mt-6">
-            <Link href="/" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors">
-              ← العودة للرئيسية
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-xs text-gray-400 hover:text-cyan-400 transition-colors">
+              العودة إلى الصفحة الرئيسية للمنصة
             </Link>
           </div>
         </div>
@@ -104,89 +202,247 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans selection:bg-cyan-500 selection:text-black">
-      <header className="flex items-center justify-between px-8 py-5 border-b border-gray-800/60 bg-[#0b0f19]/85 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-black text-cyan-400">لوحة التحكم</h1>
-          <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full font-mono">
-            المشرف الرئيسي
-          </span>
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans p-4 md:p-8">
+      
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-800 gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-cyan-400">لوحة التحكم المركزية</h1>
+          <p className="text-xs text-gray-400">إدارة حسابات المنصة، الإحصائيات، وأدوات المشرفين</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xs text-gray-400 hover:text-cyan-400 transition-colors">
-            عرض الموقع ↗
+        <div className="flex items-center gap-3">
+          <Link href="/" className="bg-[#131b2e] border border-gray-800 hover:border-cyan-500/50 text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+            عرض المنصة
           </Link>
           <button 
             onClick={() => setIsAuthenticated(false)}
-            className="text-xs text-red-400 hover:text-red-300 border border-red-500/30 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+            className="bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer"
           >
             تسجيل خروج
           </button>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="bg-[#131b2e]/60 border border-gray-800/60 p-6 rounded-3xl backdrop-blur-sm shadow-2xl space-y-6">
+      <div className="mb-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+          <h2 className="text-lg font-bold text-gray-200">📊 إحصائيات المنصة</h2>
           
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-gray-100">إدارة الحسابات المعروضة</h2>
-              <p className="text-xs text-gray-400">ابحث برقم الـ ID (الست أرقام) أو عنوان الحساب لحذفه أو إدارته.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">تصفية حسب اللعبة:</span>
+              <select 
+                value={selectedStatGame}
+                onChange={(e) => setSelectedStatGame(e.target.value)}
+                className="bg-[#131b2e] border border-gray-800 rounded-xl px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500"
+              >
+                <option value="الكل">كل الألعاب</option>
+                {gamesList.map((g, idx) => (
+                  <option key={idx} value={g}>{g}</option>
+                ))}
+              </select>
             </div>
-            
-            <div className="w-full md:w-72">
-              <input 
-                type="text" 
-                placeholder="ابحث برقم الطلب ID (مثال: 481920)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-cyan-500"
-              />
+
+            <button 
+              onClick={() => handleDeleteGameListings(selectedStatGame)}
+              className="bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
+            >
+              {selectedStatGame === 'الكل' ? '🗑️ حذف كل حسابات المنصة' : `🗑️ حذف حسابات ${selectedStatGame}`}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="bg-[#131b2e]/85 border border-gray-800/80 p-6 rounded-2xl shadow-xl flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">إجمالي الحسابات المعروضة ({selectedStatGame})</p>
+              <h3 className="text-3xl font-black text-cyan-400">{totalCount} <span className="text-xs font-normal text-gray-400">حساب</span></h3>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl font-bold">
+              🎮
             </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12 text-gray-400 text-sm">جاري جلب البيانات...</div>
-          ) : filteredListings.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 text-sm border border-dashed border-gray-800 rounded-2xl">
-              لا توجد حسابات مطابقة للبحث.
+          <div className="bg-[#131b2e]/85 border border-gray-800/80 p-6 rounded-2xl shadow-xl flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">إجمالي قيمة الحسابات ({selectedStatGame})</p>
+              <h3 className="text-3xl font-black text-cyan-400">${totalPrice}</h3>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-800 text-xs text-gray-400">
-                    <th className="py-3 px-4 font-semibold">ID الطلب</th>
-                    <th className="py-3 px-4 font-semibold">العنوان</th>
-                    <th className="py-3 px-4 font-semibold">اللعبة</th>
-                    <th className="py-3 px-4 font-semibold">السعر</th>
-                    <th className="py-3 px-4 font-semibold text-center">الإجراء</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/60 text-sm">
-                  {filteredListings.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-800/20 transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-cyan-400 font-bold">#{item.id}</td>
-                      <td className="py-3.5 px-4 text-gray-200 font-medium">{item.title}</td>
-                      <td className="py-3.5 px-4 text-gray-400 text-xs">{item.game}</td>
-                      <td className="py-3.5 px-4 font-bold text-gray-100">${item.price}</td>
-                      <td className="py-3.5 px-4 text-center">
-                        <button 
-                          onClick={() => handleDelete(item.id)}
-                          className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                        >
-                          حذف الحساب
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl font-bold">
+              💰
             </div>
-          )}
-
+          </div>
         </div>
-      </main>
+      </div>
+
+      <div className="bg-[#131b2e]/40 border border-gray-800/60 p-6 rounded-2xl backdrop-blur-sm">
+        <h2 className="text-lg font-bold text-gray-200 mb-4">🔍 إدارة وحذف حساب محدد (بواسطة الـ ID)</h2>
+        
+        <form onSubmit={handleSearchAdmin} className="flex gap-3 max-w-xl mb-6">
+          <input 
+            type="text" 
+            value={searchId}
+            onChange={(e) => setSearchId(e.target.value)}
+            placeholder="أدخل ID الطلب هنا..."
+            className="flex-1 bg-[#0b0f19] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-cyan-500"
+          />
+          <button 
+            type="submit"
+            className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition-all shadow-md shrink-0 cursor-pointer"
+          >
+            بحث عن الحساب
+          </button>
+        </form>
+
+        {loading && <p className="text-xs text-gray-400 mb-4">جاري مزامنة البيانات...</p>}
+
+        {searchNotFound && (
+          <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl mb-4">
+            لم يتم العثور على أي حساب بهذا الـ ID. تأكد من الرقم المدخل.
+          </div>
+        )}
+
+        {searchResult && (
+          <div className="max-w-sm mx-auto md:mx-0">
+            <p className="text-xs text-cyan-400 font-semibold mb-2">نتيجة البحث:</p>
+            <div className="bg-[#131b2e]/90 border border-cyan-500/40 rounded-2xl p-4 flex flex-col justify-between shadow-2xl">
+              <div>
+                <div className="h-36 bg-[#0b0f19] rounded-xl mb-4 border border-gray-800/50 overflow-hidden flex items-center justify-center relative">
+                  {searchResult.images && searchResult.images.length > 0 ? (
+                    <img src={searchResult.images[0]} alt={searchResult.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-gray-600 font-medium text-sm">صورة الحساب</span>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center mb-1">
+                  <h4 className="font-bold text-base text-gray-100">{searchResult.title}</h4>
+                  <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">ID: {searchResult.id}</span>
+                </div>
+
+                <div className="text-xs text-gray-400 space-y-1 mb-4">
+                  <p>المستوى: <span className="text-gray-200 font-semibold">{searchResult.level}</span></p>
+                  <p>التصنيف: <span className="text-gray-200 font-semibold">{searchResult.rank}</span></p>
+                  <p className="text-cyan-400/80 text-[11px] pt-1">اللعبة: {searchResult.game}</p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-800/60 mt-auto flex items-center justify-between gap-1">
+                
+                <button 
+                  onClick={() => handleDelete(searchResult.id)}
+                  className="bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white text-[11px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer"
+                >
+                  حذف
+                </button>
+
+                {(() => {
+                  const sellerLink = searchResult.contactLink || searchResult.contact || searchResult.whatsapp || searchResult.telegram;
+                  if (sellerLink) {
+                    const finalUrl = sellerLink.startsWith('http') ? sellerLink : `https://${sellerLink}`;
+                    return (
+                      <a 
+                        href={finalUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black text-[11px] font-bold px-3 py-2 rounded-xl transition-all text-center"
+                      >
+                        التواصل
+                      </a>
+                    );
+                  } else {
+                    return <span className="text-[10px] text-gray-500">لا يوجد رابط</span>;
+                  }
+                })()}
+
+                <button 
+                  onClick={() => setEditingItem(searchResult)}
+                  className="bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500 hover:text-black text-[11px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer"
+                >
+                  تعديل
+                </button>
+
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {editingItem && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#131b2e] border border-gray-800 w-full max-w-lg p-6 rounded-2xl shadow-2xl">
+            <h3 className="text-lg font-bold text-cyan-400 mb-4">تعديل تفاصيل الحساب (ID: {editingItem.id})</h3>
+            
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">عنوان الحساب</label>
+                <input 
+                  type="text" 
+                  value={editingItem.title || ''}
+                  onChange={(e) => setEditingItem({...editingItem, title: e.target.value})}
+                  className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">السعر ($)</label>
+                  <input 
+                    type="number" 
+                    value={editingItem.price || ''}
+                    onChange={(e) => setEditingItem({...editingItem, price: e.target.value})}
+                    className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">المستوى</label>
+                  <input 
+                    type="text" 
+                    value={editingItem.level || ''}
+                    onChange={(e) => setEditingItem({...editingItem, level: e.target.value})}
+                    className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">التصنيف أو الرانك</label>
+                <input 
+                  type="text" 
+                  value={editingItem.rank || ''}
+                  onChange={(e) => setEditingItem({...editingItem, rank: e.target.value})}
+                  className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">رابط التواصل مع البائع</label>
+                <input 
+                  type="text" 
+                  value={editingItem.contactLink || editingItem.contact || ''}
+                  onChange={(e) => setEditingItem({...editingItem, contactLink: e.target.value})}
+                  className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+                <button 
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit"
+                  className="bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold px-5 py-2 rounded-xl transition-all cursor-pointer shadow-lg"
+                >
+                  حفظ التعديلات
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
