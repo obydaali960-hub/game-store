@@ -81,12 +81,10 @@ export default function Home() {
     }
   };
 
-  // 1. منطق الفلترة (حسب اللعبة وحسب نطاق السعر)
+  // 1. منطق الفلترة المصلح ليعمل بسلاسة على كل الأجهزة
   const filteredListings = listings.filter(item => {
-    // فلترة اللعبة (كما هي بدون تغيير)
     if (selectedGame !== 'الكل' && item.game !== selectedGame) return false;
 
-    // فلترة السعر الجديدة والمطلوبة
     const price = Number(item.price);
     if (selectedPrice === 'low' && price >= 100) return false;
     if (selectedPrice === 'mid' && (price < 100 || price > 300)) return false;
@@ -95,15 +93,15 @@ export default function Home() {
     return true;
   });
 
-  // 2. منطق الترتيب (الأرخص أولاً أو الأغلى أولاً)
+  // 2. منطق الترتيب
   const sortedAndFilteredListings = [...filteredListings].sort((a, b) => {
     const priceA = Number(a.price);
     const priceB = Number(b.price);
 
     if (sortBy === 'lowest price') {
-      return priceA - priceB; // من الأرخص للأغلى
+      return priceA - priceB;
     } else if (sortBy === 'highest price') {
-      return priceB - priceA; // من الأغلى للأرخص
+      return priceB - priceA;
     }
     return 0;
   });
@@ -113,7 +111,6 @@ export default function Home() {
       
       <audio ref={audioRef} src="/ambient.m4a" autoPlay loop preload="auto" />
 
-      {/* الهيدر مع توافق تام للشاشات الصغيرة */}
       <header className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-4 gap-4 border-b border-gray-800/60 bg-[#0b0f19]/90 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center justify-between w-full md:w-auto">
           <div className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -167,7 +164,7 @@ export default function Home() {
         </p>
       </section>
 
-      {/* مربعات الألعاب: على الموبايل 4 أعمدة (4 فوق و 4 تحت)، وعلى اللابتوب تبقى مصطفة بتنسيقها الأصلي */}
+      {/* مربعات الألعاب: 4 في الأعلى و 4 في الأسفل للموبايل وتنسيق اللابتوب الأصلي */}
       <div className="py-4 px-4 bg-[#080c14] border-y border-gray-800/40">
         <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2 md:gap-3">
           {gamesList.map((gameName, index) => (
