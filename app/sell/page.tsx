@@ -134,29 +134,29 @@ export default function SellPage() {
         }
       }
 
-      const uniqueId = Math.floor(100000 + Math.random() * 900000);
+      // حفظ الإعلان مباشرة في قاعدة بيانات Supabase ليظهر على جميع الأجهزة
+      const { error: dbError } = await supabase.from('listings').insert([
+        {
+          title: formData.title,
+          game: formData.game,
+          level: formData.level,
+          rank: formData.rank,
+          price: Number(formData.price),
+          contact_link: formData.contactLink,
+          description: formData.description,
+          images: uploadedImageUrls,
+        }
+      ]);
 
-      const newListing = {
-        id: uniqueId,
-        title: formData.title,
-        game: formData.game,
-        level: formData.level,
-        rank: formData.rank,
-        price: Number(formData.price),
-        contactLink: formData.contactLink,
-        description: formData.description,
-        images: uploadedImageUrls,
-      };
+      if (dbError) {
+        throw dbError;
+      }
 
-      const existingListings = JSON.parse(localStorage.getItem('userListings') || '[]');
-      const updatedListings = [newListing, ...existingListings];
-      localStorage.setItem('userListings', JSON.stringify(updatedListings));
-
-      alert(`تم رفع الملفات ونشر الإعلان بنجاح! رقم الـ ID الخاص بك: #${uniqueId}`);
+      alert('تم رفع الملفات ونشر الإعلان بنجاح في قاعدة البيانات السحابية!');
       router.push('/');
     } catch (error: any) {
       console.error(error);
-      alert('حدث خطأ أثناء رفع الملفات للسحابة: ' + error.message);
+      alert('حدث خطأ أثناء النشر: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -303,7 +303,7 @@ export default function SellPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
+              className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
             >
               {loading ? 'جاري ضغط الملفات ورفعها للسحابة ونشر الإعلان...' : 'نشر الإعلان ورفع الملفات سحابياً'}
             </button>

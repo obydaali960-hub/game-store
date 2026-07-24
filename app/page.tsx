@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 const gamesList = [
   'PUBG Mobile',
@@ -28,20 +29,21 @@ export default function Home() {
   const [listings, setListings] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedListings = localStorage.getItem('userListings');
-    if (savedListings) {
-      try {
-        const parsedListings = JSON.parse(savedListings);
-        if (Array.isArray(parsedListings)) {
-          const uniqueListings = Array.from(
-            new Map(parsedListings.map(item => [item.id, item])).values()
-          );
-          setListings(uniqueListings);
-        }
-      } catch (e) {
-        console.error('خطأ في قراءة الحسابات المخزنة', e);
+    // جلب الحسابات من قاعدة بيانات Supabase سحابياً لتعمل على كل الأجهزة
+    const fetchListings = async () => {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('خطأ في جلب الحسابات من السحابة', error);
+      } else if (data) {
+        setListings(data);
       }
-    }
+    };
+
+    fetchListings();
 
     if (audioRef.current) {
       audioRef.current.volume = 1.0;
@@ -81,7 +83,7 @@ export default function Home() {
     }
   };
 
-  // 1. منطق الفلترة المصلح ليعمل بسلاسة على كل الأجهزة
+  // 1. منطق الفلترة ليعمل بسلاسة على كل الأجهزة
   const filteredListings = listings.filter(item => {
     if (selectedGame !== 'الكل' && item.game !== selectedGame) return false;
 
@@ -164,7 +166,6 @@ export default function Home() {
         </p>
       </section>
 
-      {/* مربعات الألعاب: 4 في الأعلى و 4 في الأسفل للموبايل وتنسيق اللابتوب الأصلي */}
       <div className="py-4 px-4 bg-[#080c14] border-y border-gray-800/40">
         <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2 md:gap-3">
           {gamesList.map((gameName, index) => (
