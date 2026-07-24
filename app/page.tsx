@@ -112,8 +112,15 @@ export default function Home() {
 
       <header className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-4 gap-4 border-b border-gray-800/60 bg-[#0b0f19]/90 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center justify-between w-full md:w-auto">
-          <div className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-            GAME STORE <span className="text-xs text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">MENA</span>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo.png" 
+              alt="شعار منصة NEXT LEVEL MAX" 
+              className="w-10 h-10 object-contain rounded-xl border border-gray-800 shadow-md" 
+            />
+            <div className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              NEXT LEVEL MAX <span className="text-xs text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">PLATFORM</span>
+            </div>
           </div>
         </div>
 
