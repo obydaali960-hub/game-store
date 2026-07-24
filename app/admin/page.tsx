@@ -50,6 +50,11 @@ export default function AdminDashboard() {
       console.error('خطأ في جلب البيانات من Supabase:', error);
     } else {
       setListings(data || []);
+      // إذا كان هناك حساب قيد البحث وتم تحديث بياناته، نحدثه أيضاً
+      if (searchResult) {
+        const updatedFound = data?.find((item: any) => item.id === searchResult.id);
+        if (updatedFound) setSearchResult(updatedFound);
+      }
     }
     setLoading(false);
   };
@@ -74,25 +79,25 @@ export default function AdminDashboard() {
   const handleDeleteGameListings = async (gameName: string) => {
     if (gameName === 'الكل') {
       if (confirm('تحذير شديد: هل أنت متأكد من حذف جميع حسابات المنصة بالكامل من قاعدة البيانات؟')) {
-        const { error } = await supabase.from('listings').delete().neq('id', 0); // حذف الكل
+        const { error } = await supabase.from('listings').delete().neq('id', 0);
         if (error) {
           alert('حدث خطأ أثناء الحذف: ' + error.message);
         } else {
           setListings([]);
           setSearchResult(null);
-          router.refresh();
+          router.refresh(); // تحديث الكاش للموقع الرئيسي
           alert('تم تفريغ المنصة بالكامل بنجاح.');
         }
       }
     } else {
-      if (confirm(`هل أنت متأكد من حذف جميع حسابات لعبة (${gameName}) نهائياً من قاعدة البيانات؟`)) {
+      if (confirm(`هل أنت متأكد من حذف جميع حسابات لعبة (${gameName}) نهائياً؟`)) {
         const { error } = await supabase.from('listings').delete().eq('game', gameName);
         if (error) {
           alert('حدث خطأ أثناء الحذف: ' + error.message);
         } else {
           loadListings();
           setSearchResult(null);
-          router.refresh();
+          router.refresh(); // تحديث الكاش للموقع الرئيسي
           alert(`تم حذف جميع حسابات ${gameName} بنجاح.`);
         }
       }
@@ -123,13 +128,13 @@ export default function AdminDashboard() {
       if (error) {
         alert('حدث خطأ أثناء الحذف: ' + error.message);
       } else {
-        // تحديث القائمة المحلية وتحديث الواجهة فوراً
         setListings(prev => prev.filter(item => item.id !== id));
         if (searchResult && searchResult.id === id) {
           setSearchResult(null);
         }
+        // إجبار Next.js على إعادة تحميل الصفحة الرئيسية وصفحات الموقع لتختفي الحسابات المحذوفة فوراً
         router.refresh();
-        alert('تم حذف الحساب بنجاح من المنصة!');
+        alert('تم حذف الحساب بنجاح وتحديث المنصة!');
       }
     }
   };
@@ -145,7 +150,7 @@ export default function AdminDashboard() {
         price: editingItem.price,
         level: editingItem.level,
         rank: editingItem.rank,
-        contactLink: editingItem.contactLink || editingItem.contact
+        contactLink: editingItem.contactLink || editingItem.contact || editingItem.whatsapp
       })
       .eq('id', editingItem.id);
 
@@ -153,12 +158,9 @@ export default function AdminDashboard() {
       alert('حدث خطأ أثناء التعديل: ' + error.message);
     } else {
       loadListings();
-      if (searchResult && searchResult.id === editingItem.id) {
-        setSearchResult(editingItem);
-      }
       setEditingItem(null);
       router.refresh();
-      alert('تم تعديل الحساب بنجاح في قاعدة البيانات!');
+      alert('تم تعديل الحساب بنجاح!');
     }
   };
 
@@ -334,10 +336,18 @@ export default function AdminDashboard() {
                   حذف
                 </button>
 
+                {/* فحص شامل لجميع أسماء حقول التواصل المحتملة في قاعدة البيانات */}
                 {(() => {
-                  const sellerLink = searchResult.contactLink || searchResult.contact || searchResult.whatsapp || searchResult.telegram;
+                  const sellerLink = 
+                    searchResult.contactLink || 
+                    searchResult.contact || 
+                    searchResult.whatsapp || 
+                    searchResult.telegram || 
+                    searchResult.phone ||
+                    searchResult.link;
+
                   if (sellerLink) {
-                    const finalUrl = sellerLink.startsWith('http') ? sellerLink : `https://${sellerLink}`;
+                    const finalUrl = String(sellerLink).startsWith('http') ? sellerLink : `https://${sellerLink}`;
                     return (
                       <a 
                         href={finalUrl} 
@@ -417,7 +427,7 @@ export default function AdminDashboard() {
                 <label className="block text-xs text-gray-400 mb-1">رابط التواصل مع البائع</label>
                 <input 
                   type="text" 
-                  value={editingItem.contactLink || editingItem.contact || ''}
+                  value={editingItem.contactLink || editingItem.contact || editingItem.whatsapp || ''}
                   onChange={(e) => setEditingItem({...editingItem, contactLink: e.target.value})}
                   className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
                 />
