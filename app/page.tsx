@@ -95,7 +95,7 @@ export default function Home() {
     return true;
   });
 
-  // 2. منطق الترتيب (الأرخص أولاً أو الأغلى أولاً) من اليسار لليمين
+  // 2. منطق الترتيب (الأرخص أولاً أو الأغلى أولاً)
   const sortedAndFilteredListings = [...filteredListings].sort((a, b) => {
     const priceA = Number(a.price);
     const priceB = Number(b.price);
@@ -109,27 +109,28 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans selection:bg-cyan-500 selection:text-black overflow-x-hidden">
       
       <audio ref={audioRef} src="/ambient.m4a" autoPlay loop preload="auto" />
 
-      <header className="flex items-center justify-between px-8 py-5 border-b border-gray-800/60 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+      {/* الهيدر مع توافق تام للشاشات الصغيرة */}
+      <header className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-4 gap-4 border-b border-gray-800/60 bg-[#0b0f19]/90 backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="text-xl md:text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
             GAME STORE <span className="text-xs text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">MENA</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-3 w-full md:w-auto">
           
           <button 
             onClick={toggleMute}
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-5 py-2 rounded-full text-sm transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2 shrink-0 cursor-pointer"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-4 py-2 rounded-full text-xs md:text-sm transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2 shrink-0 cursor-pointer"
           >
             <span>{isMuted ? ' إلغاء الكتم' : ' كتم الصوت'}</span>
           </button>
 
-          <form onSubmit={handleSearch} className="relative flex items-center w-72 md:w-80">
+          <form onSubmit={handleSearch} className="relative flex items-center w-full sm:w-72 md:w-80">
             <input 
               type="text" 
               value={searchQuery}
@@ -138,11 +139,11 @@ export default function Home() {
                 if (searchError) setSearchError('');
               }}
               placeholder="ابحث بـ ID الطلب (مثال: 1)" 
-              className="w-full bg-[#131b2e] border border-gray-800 rounded-full py-2 pl-20 pr-4 text-sm text-gray-200 focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-[#131b2e] border border-gray-800 rounded-full py-2 pl-20 pr-4 text-xs md:text-sm text-gray-200 focus:outline-none focus:border-cyan-500 transition-colors"
             />
             <button 
               type="submit"
-              className="absolute left-1 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold px-3.5 py-1.5 rounded-full transition-all shadow-md"
+              className="absolute left-1 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold px-3.5 py-1.5 rounded-full transition-all shadow-md cursor-pointer"
             >
               بحث
             </button>
@@ -153,28 +154,28 @@ export default function Home() {
             )}
           </form>
           
-          <Link href="/sell" className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-5 py-2 rounded-full text-sm transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2 shrink-0">
+          <Link href="/sell" className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-4 py-2 rounded-full text-xs md:text-sm transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2 shrink-0">
             <span>بيع حسابك</span>
           </Link>
         </div>
       </header>
 
-      <section className="text-center py-8 px-4">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight">استكشف أشهر الحسابات المعروضة</h1>
-        <p className="text-gray-400 text-sm max-w-xl mx-auto">
+      <section className="text-center py-6 md:py-8 px-4">
+        <h1 className="text-2xl md:text-4xl font-extrabold mb-2 tracking-tight">استكشف أشهر الحسابات المعروضة</h1>
+        <p className="text-gray-400 text-xs md:text-sm max-w-xl mx-auto">
           لتطلبه فوراً عبر ملصقنا الآمن (ID). اختر لعبتك المفضلة وتصفح الحسابات المتاحة.
         </p>
       </section>
 
-      {/* مربعات الألعاب مرتبة 4 في الأعلى و 4 في الأسفل بشكل ثابت */}
+      {/* مربعات الألعاب: على الموبايل 4 أعمدة (4 فوق و 4 تحت)، وعلى اللابتوب تبقى مصطفة بتنسيقها الأصلي */}
       <div className="py-4 px-4 bg-[#080c14] border-y border-gray-800/40">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="max-w-4xl mx-auto grid grid-cols-4 gap-2 md:gap-3">
           {gamesList.map((gameName, index) => (
             <div 
               key={index}
-              className="flex items-center justify-center gap-2 bg-[#131b2e] border border-gray-800/80 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-300 shadow-sm text-center"
+              className="flex items-center justify-center gap-1.5 bg-[#131b2e] border border-gray-800/80 px-2 py-2 md:px-3 md:py-2.5 rounded-xl text-[10px] sm:text-xs md:text-sm font-semibold text-gray-300 shadow-sm text-center"
             >
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></div>
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></div>
               <span className="truncate">{gameName}</span>
             </div>
           ))}
