@@ -14,7 +14,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
 
   // كلمة المرور الخاصة بلوحة التحكم (يمكنك تغييرها هنا)
-  const ADMIN_SECRET = '123456'; 
+  const ADMIN_SECRET = 'Syr717&s1y@ro62'; 
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
