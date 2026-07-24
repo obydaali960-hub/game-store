@@ -29,7 +29,6 @@ export default function Home() {
   const [listings, setListings] = useState<any[]>([]);
 
   useEffect(() => {
-    // جلب الحسابات من قاعدة بيانات Supabase سحابياً لتعمل على كل الأجهزة
     const fetchListings = async () => {
       const { data, error } = await supabase
         .from('listings')
@@ -83,7 +82,6 @@ export default function Home() {
     }
   };
 
-  // 1. منطق الفلترة ليعمل بسلاسة على كل الأجهزة
   const filteredListings = listings.filter(item => {
     if (selectedGame !== 'الكل' && item.game !== selectedGame) return false;
 
@@ -95,7 +93,6 @@ export default function Home() {
     return true;
   });
 
-  // 2. منطق الترتيب
   const sortedAndFilteredListings = [...filteredListings].sort((a, b) => {
     const priceA = Number(a.price);
     const priceB = Number(b.price);
@@ -137,7 +134,7 @@ export default function Home() {
                 setSearchQuery(e.target.value);
                 if (searchError) setSearchError('');
               }}
-              placeholder="ابحث بـ ID الطلب (مثال: 1)" 
+              placeholder="ابحث بـ ID الطلب (6 أرقام)" 
               className="w-full bg-[#131b2e] border border-gray-800 rounded-full py-2 pl-20 pr-4 text-xs md:text-sm text-gray-200 focus:outline-none focus:border-cyan-500 transition-colors"
             />
             <button 
@@ -162,7 +159,7 @@ export default function Home() {
       <section className="text-center py-6 md:py-8 px-4">
         <h1 className="text-2xl md:text-4xl font-extrabold mb-2 tracking-tight">استكشف أشهر الحسابات المعروضة</h1>
         <p className="text-gray-400 text-xs md:text-sm max-w-xl mx-auto">
-          لتطلبه فوراً عبر ملصقنا الآمن (ID). اختر لعبتك المفضلة وتصفح الحسابات المتاحة.
+          لتطلبه فوراً عبر رقم الطلب الآمن المكون من 6 أرقام. اختر لعبتك المفضلة وتصفح الحسابات المتاحة.
         </p>
       </section>
 
@@ -241,8 +238,8 @@ export default function Home() {
                     </div>
 
                     <div className="flex justify-between items-center mb-1">
-                      <h4 className="font-bold text-base text-gray-100">{item.title}</h4>
-                      <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">ID: {item.id}</span>
+                      <h4 className="font-bold text-base text-gray-100 truncate max-w-[170px]">{item.title}</h4>
+                      <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 font-mono">ID: {item.id}</span>
                     </div>
 
                     <div className="text-xs text-gray-400 space-y-1 mb-4">

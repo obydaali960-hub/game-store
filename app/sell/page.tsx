@@ -35,7 +35,7 @@ export default function SellPage() {
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
-        return resolve(file); // إذا لم تكن صورة (مثل فيديو)، اتركها كما هي
+        return resolve(file); 
       }
 
       const reader = new FileReader();
@@ -58,7 +58,7 @@ export default function SellPage() {
             }
           } else {
             if (height > MAX_HEIGHT) {
-              width = Math.round((width * MAX_HEIGHT) / height);
+              width = Math.round((height * MAX_HEIGHT) / height);
               height = MAX_HEIGHT;
             }
           }
@@ -82,7 +82,7 @@ export default function SellPage() {
               }
             },
             'image/jpeg',
-            0.75 // نسبة الجودة (75% واضحة جداً وصغيرة الحجم)
+            0.75 
           );
         };
         img.onerror = (error) => reject(error);
@@ -110,7 +110,6 @@ export default function SellPage() {
       const uploadedImageUrls: string[] = [];
 
       for (const file of selectedFiles) {
-        // ضغط الصورة تلقائياً قبل الرفع
         const processedFile = await compressImage(file);
 
         const fileExt = processedFile.name.split('.').pop();
@@ -134,9 +133,13 @@ export default function SellPage() {
         }
       }
 
-      // حفظ الإعلان مباشرة في قاعدة بيانات Supabase ليظهر على جميع الأجهزة
+      // توليد رقم ID عشوائي فريد مكون من 6 منازل (من 100000 إلى 999999)
+      const randomSixDigitId = Math.floor(100000 + Math.random() * 900000);
+
+      // حفظ الإعلان مع الـ ID الجديد المكون من 6 أرقام في Supabase
       const { error: dbError } = await supabase.from('listings').insert([
         {
+          id: randomSixDigitId,
           title: formData.title,
           game: formData.game,
           level: formData.level,
@@ -152,7 +155,7 @@ export default function SellPage() {
         throw dbError;
       }
 
-      alert('تم رفع الملفات ونشر الإعلان بنجاح في قاعدة البيانات السحابية!');
+      alert('تم رفع الملفات ونشر الإعلان بنجاح برقم طلب مكون من 6 أرقام!');
       router.push('/');
     } catch (error: any) {
       console.error(error);
@@ -289,7 +292,7 @@ export default function SellPage() {
                         <button 
                           type="button"
                           onClick={() => handleRemoveFile(index)}
-                          className="text-red-400 hover:text-red-300 font-semibold px-2 py-1 bg-red-500/10 rounded-lg border border-red-500/20 transition-all"
+                          className="text-red-400 hover:text-red-300 font-semibold px-2 py-1 bg-red-500/10 rounded-lg border border-red-500/20 transition-all cursor-pointer"
                         >
                           حذف
                         </button>

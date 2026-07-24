@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AccountDetailsPage() {
   const params = useParams();
@@ -11,26 +12,29 @@ export default function AccountDetailsPage() {
   const [account, setAccount] = useState<any>(null);
   const [activeMedia, setActiveMedia] = useState<string>(''); 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isFullScreenOpen, setIsFullScreenOpen] = useState<boolean>(false); // حالة معاينة الصورة كاملة
+  const [isFullScreenOpen, setIsFullScreenOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const defaultListings = [
-      { id: 101, title: 'حساب فالورانت أسطوري', game: 'Counter-Strike 2 (CS2)', level: '150', rank: 'Immortal', price: 250, description: 'حساب قوي جداً وسكنات نادرة.', contactLink: 'hidden', images: [], videoUrl: '' },
-      { id: 102, title: 'حساب ببجي عريق ومثكس', game: 'PUBG Mobile', level: '75', rank: 'Conqueror', price: 180, description: 'مفول سيزونات قديمة.', contactLink: 'hidden', images: [], videoUrl: '' },
-      { id: 103, title: 'حساب فورتنايت ندرز', game: 'Fortnite', level: '220', rank: 'Champion', price: 320, description: 'سكنات حصرية.', contactLink: 'hidden', images: [], videoUrl: '' },
-      { id: 104, title: 'كلاش أوف كلانس قري توفل 16', game: 'Clash of Clans', level: '240', rank: 'Legends', price: 150, description: 'بيس ماكس بالكامل.', contactLink: 'hidden', images: [], videoUrl: '' },
-    ];
+    const fetchAccountDetails = async () => {
+      if (!id) return;
 
-    const savedListings = JSON.parse(localStorage.getItem('userListings') || '[]');
-    const allListings = [...savedListings, ...defaultListings];
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    const found = allListings.find((item: any) => String(item.id) === String(id));
-    if (found) {
-      setAccount(found);
-      if (found.images && found.images.length > 0) {
-        setActiveMedia(found.images[0]);
+      if (error) {
+        console.error('خطأ في جلب تفاصيل الحساب من السحابة', error);
+      } else if (data) {
+        setAccount(data);
+        if (data.images && data.images.length > 0) {
+          setActiveMedia(data.images[0]);
+        }
       }
-    }
+    };
+
+    fetchAccountDetails();
   }, [id]);
 
   if (!account) {
@@ -58,16 +62,14 @@ export default function AccountDetailsPage() {
         <div className="bg-[#131b2e]/60 border border-gray-800/60 p-8 rounded-3xl backdrop-blur-sm shadow-2xl grid grid-cols-1 md:grid-cols-2 gap-8">
           
           <div className="space-y-4">
-            {/* الشاشة الكبرى لعرض الصورة مع زر العرض الكامل في الزاوية */}
             <div className="relative h-80 bg-[#0b0f19] rounded-2xl border border-gray-800/85 flex items-center justify-center overflow-hidden shadow-inner group">
               {activeMedia ? (
                 <>
                   <img src={activeMedia} alt={account.title} className="w-full h-full object-cover" />
                   
-                  {/* زر التكبير / العرض الكامل في الزاوية المحددة */}
                   <button 
                     onClick={() => setIsFullScreenOpen(true)}
-                    className="absolute top-3 left-3 bg-[#0b0f19]/80 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-cyan-500/40 px-2.5 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md transition-all shadow-md flex items-center gap-1.5"
+                    className="absolute top-3 left-3 bg-[#0b0f19]/80 hover:bg-cyan-500 hover:text-black text-cyan-400 border border-cyan-500/40 px-2.5 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
                     title="عرض الصورة بشكل كامل"
                   >
                     <span>🔍</span>
@@ -85,28 +87,11 @@ export default function AccountDetailsPage() {
                   <button 
                     key={idx}
                     onClick={() => setActiveMedia(img)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${activeMedia === img ? 'border-cyan-400 scale-105' : 'border-gray-800 opacity-60 hover:opacity-100'}`}
+                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all cursor-pointer ${activeMedia === img ? 'border-cyan-400 scale-105' : 'border-gray-800 opacity-60 hover:opacity-100'}`}
                   >
                     <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
-              </div>
-            )}
-
-            {account.videoUrl && (
-              <div className="pt-2">
-                <h3 className="text-xs font-bold text-cyan-400 mb-2">مقطع فيديو توضيحي للحساب:</h3>
-                <div className="rounded-xl overflow-hidden border border-gray-800 bg-[#0b0f19] p-2">
-                  <a 
-                    href={account.videoUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="flex items-center justify-between bg-[#131b2e] hover:bg-[#1a2540] px-4 py-3 rounded-lg border border-gray-800 text-xs text-cyan-300 transition-all"
-                  >
-                    <span className="truncate">▶️ تشغيل مقطع الفيديو المباشر من الإنترنت</span>
-                    <span className="text-[10px] text-gray-400 underline">فتح الرابط</span>
-                  </a>
-                </div>
               </div>
             )}
 
@@ -153,7 +138,7 @@ export default function AccountDetailsPage() {
               
               <button 
                 onClick={() => setIsModalOpen(true)}
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-8 py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
               >
                 شراء الحساب الآن
               </button>
@@ -164,13 +149,12 @@ export default function AccountDetailsPage() {
         </div>
       </main>
 
-      {/* نافذة معاينة الصورة بالكامل (Full Screen Image Modal) */}
       {isFullScreenOpen && activeMedia && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="relative max-w-5xl w-full max-h-[90vh] flex items-center justify-center">
             <button 
               onClick={() => setIsFullScreenOpen(false)}
-              className="absolute -top-12 left-0 text-gray-300 hover:text-white text-sm font-bold bg-[#131b2e] border border-gray-700 px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-lg"
+              className="absolute -top-12 left-0 text-gray-300 hover:text-white text-sm font-bold bg-[#131b2e] border border-gray-700 px-4 py-2 rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer"
             >
               <span>إغلاق العرض</span>
               <span>✕</span>
@@ -184,17 +168,14 @@ export default function AccountDetailsPage() {
         </div>
       )}
 
-      {/* نافذة الحوار المنبثقة لشراء الحساب */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0f19]/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          
           <div className="relative p-[2px] rounded-[30px] bg-gradient-to-r from-blue-500 to-cyan-400 shadow-2xl max-w-lg w-full">
-            
             <div className="bg-[#131b2e] rounded-[28px] p-6 md:p-8 relative text-right" dir="rtl">
               
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="absolute top-5 left-5 text-gray-400 hover:text-white text-sm font-bold bg-[#0b0f19] border border-gray-800 w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                className="absolute top-5 left-5 text-gray-400 hover:text-white text-sm font-bold bg-[#0b0f19] border border-gray-800 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer"
               >
                 ✕
               </button>
@@ -220,30 +201,18 @@ export default function AccountDetailsPage() {
               <div className="mt-6 space-y-3">
                 <div className="p-[1px] rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400">
                   <a 
-                    href="https://t.me/obyda_1" 
+                    href={account.contact_link || "https://t.me/obyda_1"} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center justify-center w-full text-center bg-[#131b2e] hover:bg-cyan-500 hover:text-black text-cyan-400 font-bold py-3.5 rounded-xl text-sm transition-all"
                   >
-                    تواصل عبر تيليجرام
-                  </a>
-                </div>
-
-                <div className="p-[1px] rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-400">
-                  <a 
-                    href={`https://wa.me/?text=مرحباً، أود شراء الحساب برقم الطلب ID: %23${account.id}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center w-full text-center bg-[#131b2e] hover:bg-emerald-600 hover:text-white text-emerald-400 font-bold py-3.5 rounded-xl text-sm transition-all"
-                  >
-                    تواصل عبر واتساب
+                    تواصل مع البائع مباشرة
                   </a>
                 </div>
               </div>
 
             </div>
           </div>
-
         </div>
       )}
 

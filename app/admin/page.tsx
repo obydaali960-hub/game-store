@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
 
 const gamesList = [
   'PUBG Mobile',
@@ -30,20 +31,21 @@ export default function AdminDashboard() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
   useEffect(() => {
-    loadListings();
-  }, []);
+    if (isAuthenticated) {
+      loadListings();
+    }
+  }, [isAuthenticated]);
 
-  const loadListings = () => {
-    const saved = localStorage.getItem('userListings');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setListings(parsed);
-        }
-      } catch (e) {
-        console.error('خطأ في قراءة البيانات', e);
-      }
+  const loadListings = async () => {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('خطأ في جلب البيانات من السحابة', error);
+    } else if (data) {
+      setListings(data);
     }
   };
 
@@ -64,19 +66,28 @@ export default function AdminDashboard() {
   const totalCount = filteredForStats.length;
   const totalPrice = filteredForStats.reduce((sum, item) => sum + Number(item.price || 0), 0);
 
-  const handleDeleteGameListings = (gameName: string) => {
+  const handleDeleteGameListings = async (gameName: string) => {
     if (gameName === 'الكل') {
-      if (confirm('تحذير شديد: هل أنت متأكد من حذف جميع حسابات المنصة بالكامل وتفريغها؟')) {
-        setListings([]);
-        localStorage.setItem('userListings', JSON.stringify([]));
-        setSearchResult(null);
+      if (confirm('تحذير شديد: هل أنت متأكد من حذف جميع حسابات المنصة بالكامل من السحابة؟')) {
+        const { error } = await supabase.from('listings').delete().neq('id', 0);
+        if (error) {
+          alert('حدث خطأ أثناء الحذف: ' + error.message);
+        } else {
+          setListings([]);
+          setSearchResult(null);
+          alert('تم حذف جميع الحسابات بنجاح.');
+        }
       }
     } else {
-      if (confirm(`هل أنت متأكد من حذف جميع حسابات لعبة (${gameName}) نهائياً؟`)) {
-        const updated = listings.filter(item => item.game !== gameName);
-        setListings(updated);
-        localStorage.setItem('userListings', JSON.stringify(updated));
-        setSearchResult(null);
+      if (confirm(`هل أنت متأكد من حذف جميع حسابات لعبة (${gameName}) نهائياً من السحابة؟`)) {
+        const { error } = await supabase.from('listings').delete().eq('game', gameName);
+        if (error) {
+          alert('حدث خطأ أثناء الحذف: ' + error.message);
+        } else {
+          loadListings();
+          setSearchResult(null);
+          alert(`تم حذف حسابات ${gameName} بنجاح.`);
+        }
       }
     }
   };
@@ -98,34 +109,46 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDelete = (id: any) => {
+  const handleDelete = async (id: any) => {
     if (confirm('هل أنت متأكد من حذف هذا الحساب نهائياً من المنصة؟')) {
-      const updated = listings.filter(item => item.id !== id);
-      setListings(updated);
-      localStorage.setItem('userListings', JSON.stringify(updated));
-      if (searchResult && searchResult.id === id) {
-        setSearchResult(null);
+      const { error } = await supabase.from('listings').delete().eq('id', id);
+      if (error) {
+        alert('حدث خطأ أثناء الحذف: ' + error.message);
+      } else {
+        loadListings();
+        if (searchResult && searchResult.id === id) {
+          setSearchResult(null);
+        }
+        alert('تم حذف الحساب بنجاح.');
       }
     }
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
 
-    const updatedListings = listings.map(item => 
-      item.id === editingItem.id ? editingItem : item
-    );
+    const { error } = await supabase
+      .from('listings')
+      .update({
+        title: editingItem.title,
+        price: Number(editingItem.price),
+        level: editingItem.level,
+        rank: editingItem.rank,
+        contact_link: editingItem.contact_link || editingItem.contactLink,
+      })
+      .eq('id', editingItem.id);
 
-    setListings(updatedListings);
-    localStorage.setItem('userListings', JSON.stringify(updatedListings));
-    
-    if (searchResult && searchResult.id === editingItem.id) {
-      setSearchResult(editingItem);
+    if (error) {
+      alert('حدث خطأ أثناء التعديل: ' + error.message);
+    } else {
+      loadListings();
+      if (searchResult && searchResult.id === editingItem.id) {
+        setSearchResult(editingItem);
+      }
+      setEditingItem(null);
+      alert('تم تعديل الحساب بنجاح!');
     }
-
-    setEditingItem(null);
-    alert('تم تعديل الحساب بنجاح!');
   };
 
   if (!isAuthenticated) {
@@ -173,7 +196,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-800 gap-4">
         <div>
           <h1 className="text-2xl font-black text-cyan-400">لوحة التحكم المركزية</h1>
-          <p className="text-xs text-gray-400">إدارة حسابات المنصة، الإحصائيات، وأدوات المشرفين</p>
+          <p className="text-xs text-gray-400">إدارة حسابات المنصة، الإحصائيات، وأدوات المشرفين (سحابياً)</p>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/" className="bg-[#131b2e] border border-gray-800 hover:border-cyan-500/50 text-xs font-semibold px-4 py-2 rounded-xl transition-all">
@@ -240,14 +263,14 @@ export default function AdminDashboard() {
       </div>
 
       <div className="bg-[#131b2e]/40 border border-gray-800/60 p-6 rounded-2xl backdrop-blur-sm">
-        <h2 className="text-lg font-bold text-gray-200 mb-4">🔍 إدارة وحذف حساب محدد (بواسطة الـ ID)</h2>
+        <h2 className="text-lg font-bold text-gray-200 mb-4">🔍 إدارة وحذف حساب محدد (بواسطة الـ ID المكون من 6 أرقام)</h2>
         
         <form onSubmit={handleSearchAdmin} className="flex gap-3 max-w-xl mb-6">
           <input 
             type="text" 
             value={searchId}
             onChange={(e) => setSearchId(e.target.value)}
-            placeholder="أدخل ID الطلب هنا..."
+            placeholder="أدخل ID الطلب (6 أرقام)..."
             className="flex-1 bg-[#0b0f19] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-cyan-500"
           />
           <button 
@@ -279,7 +302,7 @@ export default function AdminDashboard() {
 
                 <div className="flex justify-between items-center mb-1">
                   <h4 className="font-bold text-base text-gray-100">{searchResult.title}</h4>
-                  <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20">ID: {searchResult.id}</span>
+                  <span className="text-[11px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 font-mono">ID: {searchResult.id}</span>
                 </div>
 
                 <div className="text-xs text-gray-400 space-y-1 mb-4">
@@ -298,9 +321,8 @@ export default function AdminDashboard() {
                   حذف
                 </button>
 
-                {/* قراءة رابط التواصل الصحيح contactLink الذي يحفظه البائع */}
                 {(() => {
-                  const sellerLink = searchResult.contactLink || searchResult.contact || searchResult.whatsapp || searchResult.telegram;
+                  const sellerLink = searchResult.contact_link || searchResult.contactLink;
                   if (sellerLink) {
                     const finalUrl = sellerLink.startsWith('http') ? sellerLink : `https://${sellerLink}`;
                     return (
@@ -382,8 +404,8 @@ export default function AdminDashboard() {
                 <label className="block text-xs text-gray-400 mb-1">رابط التواصل مع البائع</label>
                 <input 
                   type="text" 
-                  value={editingItem.contactLink || editingItem.contact || ''}
-                  onChange={(e) => setEditingItem({...editingItem, contactLink: e.target.value})}
+                  value={editingItem.contact_link || editingItem.contactLink || ''}
+                  onChange={(e) => setEditingItem({...editingItem, contact_link: e.target.value})}
                   className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
