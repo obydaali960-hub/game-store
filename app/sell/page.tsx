@@ -31,7 +31,6 @@ export default function SellPage() {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  // دالة لضغط الصور قبل رفعها لسحابة Supabase لتوفير المساحة
   const compressImage = (file: File): Promise<File> => {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
@@ -133,10 +132,9 @@ export default function SellPage() {
         }
       }
 
-      // توليد رقم ID عشوائي فريد مكون من 6 منازل (من 100000 إلى 999999)
+      // توليد رقم ID عشوائي فريد مكون من 6 منازل (من 100000 إلى 999999) لضمان عدم تكراره وتحرره للطلب الحالي
       const randomSixDigitId = Math.floor(100000 + Math.random() * 900000);
 
-      // حفظ الإعلان مع الـ ID الجديد المكون من 6 أرقام في Supabase
       const { error: dbError } = await supabase.from('listings').insert([
         {
           id: randomSixDigitId,
@@ -155,7 +153,7 @@ export default function SellPage() {
         throw dbError;
       }
 
-      alert('تم رفع الملفات ونشر الإعلان بنجاح برقم طلب مكون من 6 أرقام!');
+      alert('تم بنجاح نشر الإعلان برقم طلب فريد مكون من 6 أرقام!');
       router.push('/');
     } catch (error: any) {
       console.error(error);
@@ -178,8 +176,8 @@ export default function SellPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-12">
         <div className="bg-[#131b2e]/60 border border-gray-800/60 p-8 rounded-3xl backdrop-blur-sm shadow-2xl">
-          <h1 className="text-2xl font-extrabold mb-2 text-cyan-400">عرض حساب للبيع (تخزين سحابي)</h1>
-          <p className="text-gray-400 text-sm mb-8">اختر صور أو مقاطع الحساب مباشرة من جهازك، وسيتم ضغطها ورفعها سحابياً وعرضها للمشترين بكل سهولة.</p>
+          <h1 className="text-2xl font-extrabold mb-2 text-cyan-400">عرض حساب للبيع</h1>
+          <p className="text-gray-400 text-sm mb-8">سيتم توليد رقم طلب (ID) فريد ومكون من 6 أرقام لهذا الحساب تلقائياً عند النشر.</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -248,7 +246,7 @@ export default function SellPage() {
 
               <div>
                 <label className="block text-xs text-cyan-400 mb-2 font-semibold">
-                  رابط التواصل الخاص <span className="text-[10px] text-gray-400 font-normal">(سري - لك وحدك)</span>
+                  رابط التواصل الخاص <span className="text-[10px] text-gray-400 font-normal">(للبائع)</span>
                 </label>
                 <input 
                   type="text" 
@@ -273,7 +271,7 @@ export default function SellPage() {
             </div>
 
             <div className="bg-[#0b0f19]/40 border border-gray-800 p-4 rounded-2xl space-y-3">
-              <label className="block text-xs text-cyan-400 font-semibold">صور أو مقاطع الحساب (من جهازك مباشرة)</label>
+              <label className="block text-xs text-cyan-400 font-semibold">صور أو مقاطع الحساب</label>
               <input 
                 type="file" 
                 multiple
@@ -284,7 +282,7 @@ export default function SellPage() {
 
               {selectedFiles.length > 0 && (
                 <div className="space-y-2 pt-2">
-                  <span className="text-[11px] text-gray-400">الملفات المختارة جاهزة للرفع ({selectedFiles.length}):</span>
+                  <span className="text-[11px] text-gray-400">الملفات المختارة ({selectedFiles.length}):</span>
                   <div className="space-y-1.5 max-h-36 overflow-y-auto">
                     {selectedFiles.map((file, index) => (
                       <div key={index} className="flex items-center justify-between bg-[#131b2e] px-3 py-2 rounded-xl border border-gray-800 text-xs">
@@ -308,7 +306,7 @@ export default function SellPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
             >
-              {loading ? 'جاري ضغط الملفات ورفعها للسحابة ونشر الإعلان...' : 'نشر الإعلان ورفع الملفات سحابياً'}
+              {loading ? 'جاري نشر الإعلان وتوليد الـ ID...' : 'نشر الإعلان برقم طلب من 6 أرقام'}
             </button>
           </form>
         </div>

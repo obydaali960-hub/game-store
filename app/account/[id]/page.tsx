@@ -193,20 +193,35 @@ export default function AccountDetailsPage() {
                 
                 <div className="bg-[#0b0f19] p-5 rounded-2xl border border-gray-800/80 shadow-inner">
                   <p className="text-base md:text-lg text-gray-100 leading-relaxed font-semibold">
-                    يرجى أخذ لقطة شاشة لعنوان الطلب (ID الطلب) من أجل تقديمه أثناء طلبك للحساب الذي تود شرائه من أجل إرسالها للمشرف كي نتمكن من معرفة الطلب الذي تقصده.
+                    يرجى أخذ لقطة شاشة لعنوان الطلب (ID الطلب #{account.id}) وإرسالها للمؤسس عبر إحدى وسائل التواصل أدناه لتأكيد عملية الشراء.
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 space-y-3">
+                <p className="text-xs text-gray-400 font-semibold">اختر وسيلة التواصل مع المؤسس:</p>
+                
+                {/* زر التليجرام الخاص بك */}
                 <div className="p-[1px] rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400">
                   <a 
-                    href={account.contact_link || "https://t.me/obyda_1"} 
+                    href="https://t.me/obyda_1" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center w-full text-center bg-[#131b2e] hover:bg-cyan-500 hover:text-black text-cyan-400 font-bold py-3.5 rounded-xl text-sm transition-all"
+                    className="flex items-center justify-center gap-2 w-full text-center bg-[#131b2e] hover:bg-cyan-500 hover:text-black text-cyan-400 font-bold py-3.5 rounded-xl text-sm transition-all"
                   >
-                    تواصل مع البائع مباشرة
+                    <span>💬 التواصل مع المؤسس عبر تيليجرام</span>
+                  </a>
+                </div>
+
+                {/* زر واتساب (رابط فتح محادثة مباشرة معك عبر رقمك أو الباركود) */}
+                <div className="p-[1px] rounded-xl bg-gradient-to-r from-emerald-500 to-green-400">
+                  <a 
+                    href="https://wa.me/?text=%Dمرحباً%20المؤسس،%20أريد%20شراء%20الحساب%20برقم%20الطلب%20%23"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full text-center bg-[#131b2e] hover:bg-emerald-500 hover:text-black text-emerald-400 font-bold py-3.5 rounded-xl text-sm transition-all"
+                  >
+                    <span>📱 التواصل مع المؤسس عبر واتساب</span>
                   </a>
                 </div>
               </div>
