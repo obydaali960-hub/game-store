@@ -47,12 +47,11 @@ export default function AdminDashboard() {
       .order('id', { ascending: false });
 
     if (error) {
-      console.error('خطأ في جلب البيانات من Supabase:', error);
+      console.error('خطأ في جلب البيانات:', error);
     } else {
       setListings(data || []);
-      // إذا كان هناك حساب قيد البحث وتم تحديث بياناته، نحدثه أيضاً
       if (searchResult) {
-        const updatedFound = data?.find((item: any) => item.id === searchResult.id);
+        const updatedFound = data?.find((item: any) => Number(item.id) === Number(searchResult.id));
         if (updatedFound) setSearchResult(updatedFound);
       }
     }
@@ -78,27 +77,27 @@ export default function AdminDashboard() {
 
   const handleDeleteGameListings = async (gameName: string) => {
     if (gameName === 'الكل') {
-      if (confirm('تحذير شديد: هل أنت متأكد من حذف جميع حسابات المنصة بالكامل من قاعدة البيانات؟')) {
+      if (confirm('تحذير شديد: هل أنت متأكد من حذف جميع حسابات المنصة بالكامل؟')) {
         const { error } = await supabase.from('listings').delete().neq('id', 0);
         if (error) {
-          alert('حدث خطأ أثناء الحذف: ' + error.message);
+          alert('خطأ: ' + error.message);
         } else {
           setListings([]);
           setSearchResult(null);
-          router.refresh(); // تحديث الكاش للموقع الرئيسي
-          alert('تم تفريغ المنصة بالكامل بنجاح.');
+          router.refresh();
+          alert('تم تفريغ المنصة بالكامل.');
         }
       }
     } else {
-      if (confirm(`هل أنت متأكد من حذف جميع حسابات لعبة (${gameName}) نهائياً؟`)) {
+      if (confirm(`هل أنت متأكد من حذف حسابات ${gameName}؟`)) {
         const { error } = await supabase.from('listings').delete().eq('game', gameName);
         if (error) {
-          alert('حدث خطأ أثناء الحذف: ' + error.message);
+          alert('خطأ: ' + error.message);
         } else {
           loadListings();
           setSearchResult(null);
-          router.refresh(); // تحديث الكاش للموقع الرئيسي
-          alert(`تم حذف جميع حسابات ${gameName} بنجاح.`);
+          router.refresh();
+          alert('تم الحذف بنجاح.');
         }
       }
     }
@@ -111,8 +110,8 @@ export default function AdminDashboard() {
 
     if (!searchId.trim()) return;
 
-    const cleanId = searchId.replace('#', '').trim();
-    const found = listings.find(item => String(item.id) === cleanId);
+    const cleanId = Number(searchId.replace('#', '').trim());
+    const found = listings.find(item => Number(item.id) === cleanId);
 
     if (found) {
       setSearchResult(found);
@@ -122,19 +121,17 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id: any) => {
-    if (confirm('هل أنت متأكد من حذف هذا الحساب نهائياً من المنصة؟')) {
-      const { error } = await supabase.from('listings').delete().eq('id', id);
+    if (confirm('هل أنت متأكد من حذف هذا الحساب نهائياً؟')) {
+      const numericId = Number(id);
+      const { error } = await supabase.from('listings').delete().eq('id', numericId);
 
       if (error) {
         alert('حدث خطأ أثناء الحذف: ' + error.message);
       } else {
-        setListings(prev => prev.filter(item => item.id !== id));
-        if (searchResult && searchResult.id === id) {
-          setSearchResult(null);
-        }
-        // إجبار Next.js على إعادة تحميل الصفحة الرئيسية وصفحات الموقع لتختفي الحسابات المحذوفة فوراً
+        setListings(prev => prev.filter(item => Number(item.id) !== numericId));
+        setSearchResult(null);
         router.refresh();
-        alert('تم حذف الحساب بنجاح وتحديث المنصة!');
+        alert('تم الحذف بنجاح من قاعدة البيانات ومن الصفحة الرئيسية!');
       }
     }
   };
@@ -150,17 +147,17 @@ export default function AdminDashboard() {
         price: editingItem.price,
         level: editingItem.level,
         rank: editingItem.rank,
-        contactLink: editingItem.contactLink || editingItem.contact || editingItem.whatsapp
+        contact_link: editingItem.contact_link
       })
-      .eq('id', editingItem.id);
+      .eq('id', Number(editingItem.id));
 
     if (error) {
-      alert('حدث خطأ أثناء التعديل: ' + error.message);
+      alert('خطأ في التعديل: ' + error.message);
     } else {
       loadListings();
       setEditingItem(null);
       router.refresh();
-      alert('تم تعديل الحساب بنجاح!');
+      alert('تم التعديل بنجاح!');
     }
   };
 
@@ -336,32 +333,19 @@ export default function AdminDashboard() {
                   حذف
                 </button>
 
-                {/* فحص شامل لجميع أسماء حقول التواصل المحتملة في قاعدة البيانات */}
-                {(() => {
-                  const sellerLink = 
-                    searchResult.contactLink || 
-                    searchResult.contact || 
-                    searchResult.whatsapp || 
-                    searchResult.telegram || 
-                    searchResult.phone ||
-                    searchResult.link;
-
-                  if (sellerLink) {
-                    const finalUrl = String(sellerLink).startsWith('http') ? sellerLink : `https://${sellerLink}`;
-                    return (
-                      <a 
-                        href={finalUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black text-[11px] font-bold px-3 py-2 rounded-xl transition-all text-center"
-                      >
-                        التواصل
-                      </a>
-                    );
-                  } else {
-                    return <span className="text-[10px] text-gray-500">لا يوجد رابط</span>;
-                  }
-                })()}
+                {/* ربط مباشر وصحيح مع عمود contact_link */}
+                {searchResult.contact_link ? (
+                  <a 
+                    href={String(searchResult.contact_link).startsWith('http') ? searchResult.contact_link : `https://${searchResult.contact_link}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-black text-[11px] font-bold px-3 py-2 rounded-xl transition-all text-center"
+                  >
+                    التواصل
+                  </a>
+                ) : (
+                  <span className="text-[10px] text-gray-500">لا يوجد رابط</span>
+                )}
 
                 <button 
                   onClick={() => setEditingItem(searchResult)}
@@ -424,11 +408,11 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">رابط التواصل مع البائع</label>
+                <label className="block text-xs text-gray-400 mb-1">رابط التواصل مع البائع (contact_link)</label>
                 <input 
                   type="text" 
-                  value={editingItem.contactLink || editingItem.contact || editingItem.whatsapp || ''}
-                  onChange={(e) => setEditingItem({...editingItem, contactLink: e.target.value})}
+                  value={editingItem.contact_link || ''}
+                  onChange={(e) => setEditingItem({...editingItem, contact_link: e.target.value})}
                   className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500"
                 />
               </div>
