@@ -185,7 +185,7 @@ export default function SellPage() {
               <input 
                 type="text" 
                 required
-                placeholder="مثال: حساب ببجي مثكس أسطوري" 
+                placeholder="مثال: حساب نادر" 
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
                 className="w-full bg-[#0b0f19] border border-gray-800 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-cyan-500"
@@ -306,7 +306,7 @@ export default function SellPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-cyan-400 to-blue-500 text-black font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
             >
-              {loading ? 'جاري نشر الإعلان وتوليد الـ ID...' : 'نشر الإعلان برقم طلب من 6 أرقام'}
+              {loading ? 'جاري نشر الإعلان وتوليد الـ ID...' : 'عرض الحساب للبيع'}
             </button>
           </form>
         </div>
