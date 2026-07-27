@@ -157,6 +157,15 @@ export default function Home() {
             )}
           </form>
           
+          <a 
+            href="https://wa.me/963998779058" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-4 py-2 rounded-full text-xs md:text-sm transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2 shrink-0"
+          >
+            <span>الدعم</span>
+          </a>
+
           <Link href="/sell" className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-4 py-2 rounded-full text-xs md:text-sm transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2 shrink-0">
             <span>بيع حسابك</span>
           </Link>

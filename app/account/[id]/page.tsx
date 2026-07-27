@@ -51,7 +51,7 @@ export default function AccountDetailsPage() {
       
       <header className="flex items-center justify-between px-8 py-5 border-b border-gray-800/60 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50">
         <Link href="/" className="text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-          GAME STORE <span className="text-xs text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">MENA</span>
+          GAME STORE <span className="text-xs text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded">GLOBAL</span>
         </Link>
         <Link href="/" className="text-sm text-gray-400 hover:text-cyan-400 transition-colors">
           العودة للرئيسية ←
@@ -209,7 +209,7 @@ export default function AccountDetailsPage() {
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full text-center bg-[#131b2e] hover:bg-cyan-500 hover:text-black text-cyan-400 font-bold py-3.5 rounded-xl text-sm transition-all"
                   >
-                    <span>💬 التواصل مع المؤسس عبر تيليجرام</span>
+                    <span> التواصل مع المؤسس عبر تيليجرام</span>
                   </a>
                 </div>
 
@@ -221,7 +221,7 @@ export default function AccountDetailsPage() {
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full text-center bg-[#131b2e] hover:bg-emerald-500 hover:text-black text-emerald-400 font-bold py-3.5 rounded-xl text-sm transition-all"
                   >
-                    <span>📱 التواصل مع المؤسس عبر واتساب</span>
+                    <span> التواصل مع المؤسس عبر واتساب</span>
                   </a>
                 </div>
               </div>
