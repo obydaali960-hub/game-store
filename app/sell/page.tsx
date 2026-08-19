@@ -132,7 +132,7 @@ export default function SellPage() {
         }
       }
 
-      // توليد رقم ID عشوائي فريد مكون من 6 منازل (من 100000 إلى 999999) لضمان عدم تكراره وتحرره للطلب الحالي
+      // توليد رقم ID عشوائي فريد مكون من 6 منازل
       const randomSixDigitId = Math.floor(100000 + Math.random() * 900000);
 
       const { error: dbError } = await supabase.from('listings').insert([
@@ -153,7 +153,8 @@ export default function SellPage() {
         throw dbError;
       }
 
-      alert('تم بنجاح نشر الإعلان برقم طلب فريد مكون من 6 أرقام!');
+      // عرض رقم الطلب الفعلي للمستخدم في رسالة النجاح
+      alert(`تم بنجاح نشر الإعلان!\nرقم طلبك الفريد هو: ${randomSixDigitId}\nيرجى الاحتفاظ به أو أخذ لقطة شاشة.`);
       router.push('/');
     } catch (error: any) {
       console.error(error);
